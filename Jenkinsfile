@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonarqube'
-        NEXUS_URL = 'http://192.168.1.10:8081'
+       NEXUS_URL = 'http://nexus-server:8081'
     }
 
     stages {
