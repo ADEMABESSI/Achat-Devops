@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven 'maven-3.9.4'
-        jdk   'java-17'
+        jdk 'java-17'
     }
 
     environment {
@@ -26,23 +26,24 @@ pipeline {
 
         stage('Checkout SCM') {
             steps {
-                // Checkout récupère aussi le Dockerfile depuis GitHub ✅
                 git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
             }
         }
-stage('Vérifier Dockerfile') {
-    steps {
-        sh '''
-            ls -la
-            if [ -f docker/Dockerfile ]; then
-    echo "✅ Dockerfile trouvé !"
-    cat docker/Dockerfile
-else
-    echo "❌ Dockerfile NON trouvé !"
-    exit 1
-fi
-}
-}
+
+        stage('Vérifier Dockerfile') {
+            steps {
+                sh '''
+                    ls -la
+                    if [ -f docker/Dockerfile ]; then
+                        echo "✅ Dockerfile trouvé !"
+                        cat docker/Dockerfile
+                    else
+                        echo "❌ Dockerfile NON trouvé !"
+                        exit 1
+                    fi
+                '''
+            }
+        }
 
         stage('Tool Install') {
             steps {
@@ -125,7 +126,7 @@ fi
                 )]) {
                     sh """
                         mkdir -p target
-                        curl -f -u \${NEXUS_USER}:\${NEXUS_PASS} \
+                        curl -f -u ${NEXUS_USER}:${NEXUS_PASS} \
                              "${NEXUS_JAR_URL}" \
                              -o target/${JAR_NAME}
                         echo "✅ JAR récupéré depuis Nexus"
@@ -142,10 +143,11 @@ fi
                     ls -lh target/${JAR_NAME}
 
                     echo "=== Vérifier Dockerfile ==="
-                    cat Dockerfile
+                    cat docker/Dockerfile
 
                     echo "=== Build Docker Image ==="
                     docker build \
+                        -f docker/Dockerfile \
                         --build-arg JAR_FILE=${JAR_NAME} \
                         --build-arg APP_PORT=${APP_PORT} \
                         -t ${IMAGE_NAME} .
