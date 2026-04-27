@@ -17,6 +17,7 @@
     <properties>
         <java.version>1.8</java.version>
         <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <nexus.url>http://nexus-server:8081</nexus.url>
     </properties>
 
     <dependencies>
@@ -54,10 +55,6 @@
             <version>3.0.0</version>
         </dependency>
     </dependencies>
-
-    <properties>
-    <nexus.url>http://nexus-server:8081</nexus.url>
-</properties>
 
 <distributionManagement>
     <repository>
