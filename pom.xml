@@ -73,18 +73,16 @@
 
     <!-- ================= NEXUS DEPLOY ================= -->
     <distributionManagement>
+    <repository>
+        <id>nexus-releases</id>
+        <url>${nexus.url}/repository/maven-releases/</url>
+    </repository>
 
-        <repository>
-            <id>nexus-releases</id>
-            <url>http://nexus-server:8081/repository/maven-releases/</url>
-        </repository>
-
-        <snapshotRepository>
-            <id>nexus-snapshots</id>
-            <url>http://nexus-server:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
-
-    </distributionManagement>
+    <snapshotRepository>
+        <id>nexus-snapshots</id>
+        <url>${nexus.url}/repository/maven-snapshots/</url>
+    </snapshotRepository>
+</distributionManagement>
 
     <!-- ================= BUILD ================= -->
     <build>
