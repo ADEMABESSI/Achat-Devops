@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-alpine
+FROM eclipse-temurin:17-jre-alpine
 ARG JAR_FILE=achat-1.0.jar
 ARG APP_PORT=8082
 ENV APP_PORT=${APP_PORT}
