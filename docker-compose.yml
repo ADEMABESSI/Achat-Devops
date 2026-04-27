@@ -19,24 +19,23 @@ services:
       retries: 5
 
   app-achat:
-    image: ${DOCKERHUB_USER}/achat:${IMAGE_TAG:-1.0.0}
+    # ✅ Image locale construite par Jenkins
+    image: achat:1.0.0
     restart: on-failure
     depends_on:
       mysqldb:
         condition: service_healthy
     ports:
-      - "${APP_PORT:-8082}:${APP_PORT:-8082}"
+      - "8082:8082"
     environment:
       SPRING_APPLICATION_JSON: >
         {
-          "spring.datasource.url"             : "jdbc:mysql://mysqldb:3306/achat_db?createDatabaseIfNotExist=true",
-          "spring.datasource.username"        : "root",
-          "spring.datasource.password"        : "",
-          "spring.jpa.hibernate.ddl-auto"     : "update",
-          "server.port"                       : "${APP_PORT:-8082}"
+          "spring.datasource.url"         : "jdbc:mysql://mysqldb:3306/achat_db?createDatabaseIfNotExist=true",
+          "spring.datasource.username"    : "root",
+          "spring.datasource.password"    : "",
+          "spring.jpa.hibernate.ddl-auto" : "update",
+          "server.port"                   : "8082"
         }
-    stdin_open: true
-    tty: true
 
 volumes:
   db_data:
