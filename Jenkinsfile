@@ -9,10 +9,10 @@ pipeline {
     environment {
         SONARQUBE_ENV = 'sonarqube'
         NEXUS_URL = 'http://192.168.1.10:8081'
-
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
@@ -31,7 +31,7 @@ pipeline {
             }
         }
 
-        stage('sonarqube - Analyse qualité') {
+        stage('SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
@@ -41,18 +41,22 @@ pipeline {
             }
         }
 
-     stage('Nexus - Publication') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'nexus-cred',
-                                         usernameVariable: 'NEXUS_USER',
-                                         passwordVariable: 'NEXUS_PASS')]) {
+        stage('Nexus Deploy') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexus-cred',
+                                                 usernameVariable: 'NEXUS_USER',
+                                                 passwordVariable: 'NEXUS_PASS')]) {
 
-            sh 'mvn deploy -Dnexus.username=$NEXUS_USER -Dnexus.password=$NEXUS_PASS -Dnexus.url=$NEXUS_URL'
+                    sh """
+                        mvn clean deploy \
+                        -Dnexus.url=$NEXUS_URL \
+                        -Dnexus.username=$NEXUS_USER \
+                        -Dnexus.password=$NEXUS_PASS
+                    """
+                }
+            }
         }
     }
-}
-        
-    
 
     post {
         always {
