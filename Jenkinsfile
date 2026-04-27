@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -66,14 +67,15 @@ pipeline {
             }
         }
 
-       stage('Nexus - Publication') {
-    steps {
-        sh '''
-        mvn clean deploy -s settings.xml \
-        -DaltDeploymentRepository=nexus-releases::default::http://192.168.1.10:8081/repository/maven-releases/
-        '''
-    }
-}
+        stage('Nexus - Publication') {
+            steps {
+                sh '''
+                mvn clean deploy -s settings.xml \
+                -DaltDeploymentRepository=nexus-releases::default::http://192.168.1.10:8081/repository/maven-releases/
+                '''
+            }
+        }
+    } 
 
     post {
         always {
