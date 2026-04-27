@@ -71,7 +71,7 @@ pipeline {
             steps {
                 sh '''
                 mvn clean deploy -s settings.xml \
-                -DaltDeploymentRepository=nexus-releases::default::http://192.168.1.10:8081/repository/maven-releases/
+                -DaltDeploymentRepository=nexus-releases::default::http://172.17.0.1:8081/repository/maven-releases/
                 '''
             }
         }
