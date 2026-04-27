@@ -7,7 +7,6 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = 'sonarqube'
         NEXUS_URL = 'http://192.168.1.10:8081'
     }
 
@@ -40,13 +39,14 @@ pipeline {
                 }
             }
         }
- stage('Prepare Maven Settings') {
-        steps {
-            withCredentials([usernamePassword(credentialsId: 'nexus-cred',
-                                              usernameVariable: 'NEXUS_USER',
-                                              passwordVariable: 'NEXUS_PASS')]) {
 
-                writeFile file: 'settings.xml', text: """
+        stage('Prepare Maven Settings') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexus-cred',
+                                                  usernameVariable: 'NEXUS_USER',
+                                                  passwordVariable: 'NEXUS_PASS')]) {
+
+                    writeFile file: 'settings.xml', text: """
 <settings>
   <servers>
     <server>
@@ -62,14 +62,17 @@ pipeline {
   </servers>
 </settings>
 """
+                }
+            }
+        }
+
+        stage('Nexus - Publication') {
+            steps {
+                sh 'mvn clean deploy -s settings.xml -Dnexus.url=$NEXUS_URL'
             }
         }
     }
-        stage('Nexus - Publication') {
-    steps {
-        sh 'mvn clean deploy -Dnexus.url=$NEXUS_URL'
-    }
-}
+
     post {
         always {
             echo 'Pipeline terminé'
