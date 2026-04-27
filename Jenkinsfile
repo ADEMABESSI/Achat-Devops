@@ -120,6 +120,18 @@ pipeline {
                 }
             }
         }
+        stage('Debug - Vérifier fichiers') {
+    steps {
+        sh '''
+            echo "=== Répertoire courant ==="
+            pwd
+            echo "=== Contenu du dossier ==="
+            ls -la
+            echo "=== Chercher Dockerfile partout ==="
+            find . -name "Dockerfile" -o -name "dockerfile" 2>/dev/null
+        '''
+    }
+}
 
         stage('Build Docker Image') {
             steps {
