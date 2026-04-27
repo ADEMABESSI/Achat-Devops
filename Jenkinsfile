@@ -41,13 +41,13 @@ pipeline {
             }
         }
 
-        stage('Nexus - Publication') {
-            steps {
-            
-                sh 'mvn deploy -Dnexus.url=$NEXUS_URL'
-            }
-        }
+      stage('Nexus - Publication') {
+    steps {
+        sh "mvn deploy -Dnexus.url=${NEXUS_URL}"
     }
+}
+        
+    
 
     post {
         always {
