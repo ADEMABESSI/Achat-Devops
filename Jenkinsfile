@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = 'SonarQube'
+        SONARQUBE_ENV = 'sonarqube'
     }
 
     stages {
@@ -29,9 +29,9 @@ pipeline {
             }
         }
 
-        stage('SonarQube - Analyse qualité') {
+        stage('sonarqube - Analyse qualité') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('sonarqube') {
                     sh 'mvn sonar:sonar'
                 }
             }
