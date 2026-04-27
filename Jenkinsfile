@@ -27,10 +27,12 @@ pipeline {
         }
 
         stage('Debug POM') {
-            steps {
-                sh 'cat pom.xml'
-            }
-        }
+    steps {
+        sh 'pwd'
+        sh 'ls -la'
+        sh 'cat pom.xml | grep -n distributionManagement'
+    }
+}
 
         stage('Test') {
             steps {
