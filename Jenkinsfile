@@ -8,6 +8,12 @@ pipeline {
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
@@ -19,11 +25,12 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
+
         stage('Debug POM') {
-    steps {
-        sh 'cat pom.xml'
-    }
-}
+            steps {
+                sh 'cat pom.xml'
+            }
+        }
 
         stage('Test') {
             steps {
@@ -49,11 +56,12 @@ pipeline {
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
 
-                    sh """
-                        mvn clean deploy \
-                        -DskipTests \
-                        --settings /var/lib/jenkins/.m2/settings.xml
-                    """
+                    sh '''
+                        mvn deploy -DskipTests \
+                        --settings /var/lib/jenkins/.m2/settings.xml \
+                        -Dnexus.username=$NEXUS_USER \
+                        -Dnexus.password=$NEXUS_PASS
+                    '''
                 }
             }
         }
