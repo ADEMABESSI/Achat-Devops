@@ -2,27 +2,26 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'
-        jdk 'JDK8'
+        maven 'maven-3.9.4'
+        jdk 'java-17'
     }
 
     environment {
         SONARQUBE_ENV = 'sonarqube'
-        NEXUS_URL = 'http://nexus-server:8081'
+        NEXUS_URL = 'http://192.168.1.10:8081'
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
+                git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'mvn clean compile -DskipTests'
+                sh 'mvn clean compile'
             }
         }
 
@@ -32,31 +31,22 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('SonarQube - Analyse qualité') {
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            mvn sonar:sonar \
-                            -Dsonar.login=$SONAR_TOKEN
-                        '''
+                        sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
                     }
                 }
             }
         }
 
-        stage('Nexus Deploy') {
+        stage('Nexus - Publication') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'nexus-cred',
-                    usernameVariable: 'NEXUS_USER',
-                    passwordVariable: 'NEXUS_PASS'
-                )]) {
-
-                    sh '''
-                        mvn deploy -DskipTests \
-                        -DaltDeploymentRepository=nexus-releases::default::http://nexus-server:8081/repository/maven-releases/
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'nexus-cred',
+                                                  usernameVariable: 'NEXUS_USER',
+                                                  passwordVariable: 'NEXUS_PASS')]) {
+                    sh 'mvn deploy -Dnexus.username=$NEXUS_USER -Dnexus.password=$NEXUS_PASS -Dnexus.url=$NEXUS_URL'
                 }
             }
         }
@@ -64,8 +54,13 @@ pipeline {
 
     post {
         always {
-            cleanWs()
             echo 'Pipeline terminé'
+        }
+        success {
+            echo 'Succès'
+        }
+        failure {
+            echo 'Échec'
         }
     }
 }
