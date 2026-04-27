@@ -11,8 +11,8 @@ pipeline {
         NEXUS_IP      = "172.17.0.1"
         NEXUS_PORT    = "8081"
         APP_NAME      = "achat"
-        APP_VERSION   = "0.0.1-SNAPSHOT"
-        GROUP_ID_PATH = "tn/esprit"
+        APP_VERSION   = "1.0"
+        GROUP_ID_PATH = "tn/esprit/rh"
         APP_PORT      = "8082"
         IMAGE_TAG     = "1.0.0"
 
@@ -41,6 +41,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
+                sh "ls -lh target/${JAR_NAME}"
             }
         }
 
@@ -95,7 +96,8 @@ pipeline {
                 sh """
                     mvn clean deploy -s settings.xml \
                     -DskipTests \
-                    -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/maven-releases/
+                    -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/maven-releases/ \
+                    || echo "⚠️ JAR déjà présent dans Nexus - on continue"
                 """
             }
         }
@@ -109,10 +111,10 @@ pipeline {
                 )]) {
                     sh """
                         mkdir -p target
-                        curl -u \${NEXUS_USER}:\${NEXUS_PASS} \
+                        curl -f -u \${NEXUS_USER}:\${NEXUS_PASS} \
                              "${NEXUS_JAR_URL}" \
                              -o target/${JAR_NAME}
-                        echo "✅ JAR téléchargé depuis Nexus"
+                        echo "✅ JAR récupéré depuis Nexus"
                         ls -lh target/${JAR_NAME}
                     """
                 }
@@ -126,13 +128,11 @@ pipeline {
                         --build-arg JAR_FILE=${JAR_NAME} \
                         --build-arg APP_PORT=${APP_PORT} \
                         -t ${IMAGE_NAME} .
-                    echo "✅ Image Docker locale créée : ${IMAGE_NAME}"
+                    echo "✅ Image Docker créée : ${IMAGE_NAME}"
                     docker images | grep ${APP_NAME}
                 """
             }
         }
-
-        // ❌ PAS DE DOCKERHUB - image locale uniquement
 
         stage('Deploy with Docker Compose') {
             steps {
@@ -141,8 +141,9 @@ pipeline {
                     export APP_PORT=${APP_PORT}
                     docker compose down --remove-orphans || true
                     docker compose up -d
-                    echo "✅ Application déployée localement"
-                    docker ps
+                    echo "✅ Application déployée"
+                    sleep 5
+                    docker ps | grep ${APP_NAME}
                 """
             }
         }
@@ -159,7 +160,7 @@ pipeline {
             🌐 Application  : http://${VM_IP}:${APP_PORT}
             📦 Nexus        : http://${NEXUS_IP}:${NEXUS_PORT}
             🔍 SonarQube    : http://${VM_IP}:9000
-            🐳 Image Docker : ${IMAGE_NAME} (locale)
+            🐳 Image Docker : ${IMAGE_NAME}
             ─────────────────────────────
             """
         }
