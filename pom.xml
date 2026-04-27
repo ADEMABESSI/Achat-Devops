@@ -55,18 +55,21 @@
         </dependency>
     </dependencies>
 
-    <!-- 🔥 IMPORTANT PART -->
-    <distributionManagement>
-        <repository>
-            <id>nexus-releases</id>
-            <url>${nexus.url}/repository/maven-releases/</url>
-        </repository>
+    <properties>
+    <nexus.url>http://nexus-server:8081</nexus.url>
+</properties>
 
-        <snapshotRepository>
-            <id>nexus-snapshots</id>
-            <url>${nexus.url}/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+<distributionManagement>
+    <repository>
+        <id>nexus-releases</id>
+        <url>${nexus.url}/repository/maven-releases/</url>
+    </repository>
+
+    <snapshotRepository>
+        <id>nexus-snapshots</id>
+        <url>${nexus.url}/repository/maven-snapshots/</url>
+    </snapshotRepository>
+</distributionManagement>
 
     <build>
         <plugins>
