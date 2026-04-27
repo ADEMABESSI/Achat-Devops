@@ -41,9 +41,14 @@ pipeline {
             }
         }
 
-      stage('Nexus - Publication') {
+     stage('Nexus - Publication') {
     steps {
-        sh "mvn deploy -Dnexus.url=${NEXUS_URL}"
+        withCredentials([usernamePassword(credentialsId: 'nexus-cred',
+                                         usernameVariable: 'NEXUS_USER',
+                                         passwordVariable: 'NEXUS_PASS')]) {
+
+            sh 'mvn deploy -Dnexus.username=$NEXUS_USER -Dnexus.password=$NEXUS_PASS -Dnexus.url=$NEXUS_URL'
+        }
     }
 }
         
