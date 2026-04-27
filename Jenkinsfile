@@ -11,7 +11,7 @@ pipeline {
         NEXUS_IP      = "172.17.0.1"
         NEXUS_PORT    = "8081"
         APP_NAME      = "achat"
-        APP_VERSION   = "1.0"
+        APP_VERSION   = "1.1"
         GROUP_ID_PATH = "tn/esprit/rh"
         APP_PORT      = "8082"
         IMAGE_TAG     = "1.0.0"
