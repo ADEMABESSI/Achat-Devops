@@ -53,6 +53,12 @@
 			<artifactId>springfox-swagger-ui</artifactId>
 			<version>3.0.0</version>
 		</dependency>
+		<properties>
+    <sonar.host.url>http://<ip-vm>:9000</sonar.host.url>
+    <sonar.projectKey>MonProjet</sonar.projectKey>
+    <sonar.projectName>Mon Projet DevOps</sonar.projectName>
+    <sonar.projectVersion>1.0</sonar.projectVersion>
+</properties>
 
 	</dependencies>
 
