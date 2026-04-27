@@ -5,6 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- ================= PARENT ================= -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -12,6 +13,7 @@
         <relativePath/>
     </parent>
 
+    <!-- ================= PROJECT INFO ================= -->
     <groupId>tn.esprit.rh</groupId>
     <artifactId>achat</artifactId>
     <version>1.0</version>
@@ -22,13 +24,12 @@
     <properties>
         <java.version>1.8</java.version>
         <sonar.host.url>http://localhost:9000</sonar.host.url>
-        <nexus.url>http://nexus-server:8081</nexus.url>
     </properties>
 
     <!-- ================= DEPENDENCIES ================= -->
     <dependencies>
 
-        <!-- Spring -->
+        <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -46,7 +47,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Lombok FIX (important) -->
+        <!-- Lombok (FIX stable) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -54,7 +55,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Test -->
+        <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -70,21 +71,24 @@
 
     </dependencies>
 
-    <!-- ================= DISTRIBUTION NEXUS ================= -->
+    <!-- ================= NEXUS DEPLOY ================= -->
     <distributionManagement>
-    <repository>
-        <id>nexus-releases</id>
-        <url>http://nexus-server:8081/repository/maven-releases/</url>
-    </repository>
 
-    <snapshotRepository>
-        <id>nexus-snapshots</id>
-        <url>http://nexus-server:8081/repository/maven-snapshots/</url>
-    </snapshotRepository>
-</distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <url>http://nexus-server:8081/repository/maven-releases/</url>
+        </repository>
+
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <url>http://nexus-server:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+
+    </distributionManagement>
 
     <!-- ================= BUILD ================= -->
     <build>
+
         <plugins>
 
             <!-- Spring Boot -->
@@ -93,7 +97,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- COMPILER FIX (IMPORTANT POUR TON ERREUR) -->
+            <!-- Compiler FIX (IMPORTANT pour ton erreur javac/lombok) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -112,6 +116,7 @@
             </plugin>
 
         </plugins>
+
     </build>
 
 </project>
