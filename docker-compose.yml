@@ -16,8 +16,8 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
-      retries: 10          # ← augmenter les tentatives
-      start_period: 40s    # ← laisser le temps à MySQL de démarrer
+      retries: 10
+      start_period: 40s
 
   app-achat:
     image: achat:1.0.0
@@ -27,6 +27,11 @@ services:
       - "8082:8082"
     depends_on:
       mysqldb:
-        condition: service_healthy   # ← attendre que MySQL soit healthy
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/achat?createDat
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/achat?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+volumes:        # ← OBLIGATOIRE : déclarer le volume ici
+  db_data:
