@@ -70,18 +70,17 @@
         </dependency>
     </dependencies>
 
-    <!-- ✅ CORRECT placement -->
     <distributionManagement>
-        <snapshotRepository>
-            <id>nexus-snapshots</id>
-            <url>http://IP_VM:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
+    <repository>
+        <id>nexus-releases</id>
+        <url>${nexus.url}/repository/maven-releases/</url>
+    </repository>
 
-        <repository>
-            <id>nexus-releases</id>
-            <url>http://IP_VM:8081/repository/maven-releases/</url>
-        </repository>
-    </distributionManagement>
+    <snapshotRepository>
+        <id>nexus-snapshots</id>
+        <url>${nexus.url}/repository/maven-snapshots/</url>
+    </snapshotRepository>
+</distributionManagement>
 
     <build>
         <plugins>
