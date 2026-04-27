@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'maven-3.9.4'
-        jdk 'java-17'
-    }
-
     environment {
         SONARQUBE_ENV = 'sonarqube'
         NEXUS_URL = 'http://192.168.1.10:8081'
@@ -43,13 +38,15 @@ pipeline {
 
         stage('Nexus Deploy') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'nexus-cred',
-                                                 usernameVariable: 'NEXUS_USER',
-                                                 passwordVariable: 'NEXUS_PASS')]) {
-
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus-cred',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
                     sh """
                         mvn clean deploy \
-                        -Dnexus.url=$NEXUS_URL \
+                        -DskipTests \
+                        --settings /var/lib/jenkins/.m2/settings.xml \
                         -Dnexus.username=$NEXUS_USER \
                         -Dnexus.password=$NEXUS_PASS
                     """
