@@ -1,6 +1,5 @@
-FROM openjdk:11-jdk-alpine
+FROM openjdk:17-jdk-alpine
 
-# Variables passées depuis Jenkins
 ARG JAR_FILE=achat-0.0.1-SNAPSHOT.jar
 ARG APP_PORT=8082
 
