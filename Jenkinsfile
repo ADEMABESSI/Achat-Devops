@@ -33,4 +33,17 @@ pipeline {
             echo 'Build échoué !'
         }
     }
+    stage('SonarQube - Analyse qualité') {
+    steps {
+        echo '========== Analyse qualité du code =========='
+        withSonarQubeEnv('SonarQube') {
+            sh '''
+                mvn sonar:sonar \
+                  -Dsonar.projectKey=MonProjet \
+                  -Dsonar.host.url=http://<ip-vm>:9000 \
+                  -Dsonar.login=<votre-token>
+            '''
+        }
+    }
+}
 }
