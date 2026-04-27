@@ -1,4 +1,5 @@
 services:
+
   mysqldb:
     image: mysql:5.7
     container_name: mysqldb
@@ -18,6 +19,8 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
+    networks:
+      - app-network
 
   app-achat:
     image: achat:1.0.0
@@ -32,6 +35,52 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/achat?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+    networks:
+      - app-network
+      - monitoring-network
 
-volumes:        # ← OBLIGATOIRE : déclarer le volume ici
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: always
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring-network
+
+volumes:
   db_data:
+  grafana_data:
+
+networks:
+  app-network:
+  monitoring-network:
