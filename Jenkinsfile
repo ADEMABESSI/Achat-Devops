@@ -30,23 +30,19 @@ pipeline {
                 git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
             }
         }
-
-        stage('Vérifier Dockerfile') {
-            steps {
-                sh '''
-                    echo "=== Contenu du workspace ==="
-                    ls -la
-                    echo "=== Vérifier Dockerfile ==="
-                    if [ -f Dockerfile ]; then
-                        echo "✅ Dockerfile trouvé !"
-                        cat Dockerfile
-                    else
-                        echo "❌ Dockerfile NON trouvé !"
-                        exit 1
-                    fi
-                '''
-            }
-        }
+stage('Vérifier Dockerfile') {
+    steps {
+        sh '''
+            ls -la
+            if [ -f docker/Dockerfile ]; then
+    echo "✅ Dockerfile trouvé !"
+    cat docker/Dockerfile
+else
+    echo "❌ Dockerfile NON trouvé !"
+    exit 1
+fi
+}
+}
 
         stage('Tool Install') {
             steps {
