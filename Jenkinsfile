@@ -43,4 +43,21 @@ pipeline {
         }
     }
 }
+    stage('Nexus - Publication') {
+            steps {
+                echo '========== Publication de l artefact sur Nexus =========='
+                sh 'mvn deploy -DskipTests'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ PIPELINE COMPLET RÉUSSI !'
+        }
+        failure {
+            echo '❌ PIPELINE ÉCHOUÉ - vérifier les logs'
+        }
+    }
+    
 }
