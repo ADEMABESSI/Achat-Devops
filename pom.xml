@@ -92,5 +92,10 @@
 
         </plugins>
     </build>
+         <server>
+  <id>nexus-releases</id>
+  <username>${NEXUS_USER}</username>
+  <password>${NEXUS_PASS}</password>
+</server>
 
 </project>
