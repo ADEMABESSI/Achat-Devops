@@ -40,18 +40,36 @@ pipeline {
                 }
             }
         }
+ stage('Prepare Maven Settings') {
+        steps {
+            withCredentials([usernamePassword(credentialsId: 'nexus-cred',
+                                              usernameVariable: 'NEXUS_USER',
+                                              passwordVariable: 'NEXUS_PASS')]) {
 
-        stage('Nexus - Publication') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'nexus-cred',
-                                                  usernameVariable: 'NEXUS_USER',
-                                                  passwordVariable: 'NEXUS_PASS')]) {
-                    sh 'mvn deploy -Dnexus.username=$NEXUS_USER -Dnexus.password=$NEXUS_PASS -Dnexus.url=$NEXUS_URL'
-                }
+                writeFile file: 'settings.xml', text: """
+<settings>
+  <servers>
+    <server>
+      <id>nexus-releases</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+    <server>
+      <id>nexus-snapshots</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+  </servers>
+</settings>
+"""
             }
         }
     }
-
+        stage('Nexus - Publication') {
+    steps {
+        sh 'mvn clean deploy -Dnexus.url=$NEXUS_URL'
+    }
+}
     post {
         always {
             echo 'Pipeline terminé'
