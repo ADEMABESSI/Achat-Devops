@@ -26,7 +26,25 @@ pipeline {
 
         stage('Checkout SCM') {
             steps {
+                // Checkout récupère aussi le Dockerfile depuis GitHub ✅
                 git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
+            }
+        }
+
+        stage('Vérifier Dockerfile') {
+            steps {
+                sh '''
+                    echo "=== Contenu du workspace ==="
+                    ls -la
+                    echo "=== Vérifier Dockerfile ==="
+                    if [ -f Dockerfile ]; then
+                        echo "✅ Dockerfile trouvé !"
+                        cat Dockerfile
+                    else
+                        echo "❌ Dockerfile NON trouvé !"
+                        exit 1
+                    fi
+                '''
             }
         }
 
@@ -97,7 +115,7 @@ pipeline {
                     mvn clean deploy -s settings.xml \
                     -DskipTests \
                     -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/maven-releases/ \
-                    || echo "⚠️ JAR déjà présent dans Nexus - on continue"
+                    || echo "⚠️ JAR déjà dans Nexus - on continue"
                 """
             }
         }
@@ -120,26 +138,22 @@ pipeline {
                 }
             }
         }
-        stage('Debug - Vérifier fichiers') {
-    steps {
-        sh '''
-            echo "=== Répertoire courant ==="
-            pwd
-            echo "=== Contenu du dossier ==="
-            ls -la
-            echo "=== Chercher Dockerfile partout ==="
-            find . -name "Dockerfile" -o -name "dockerfile" 2>/dev/null
-        '''
-    }
-}
 
         stage('Build Docker Image') {
             steps {
                 sh """
+                    echo "=== Vérifier JAR ==="
+                    ls -lh target/${JAR_NAME}
+
+                    echo "=== Vérifier Dockerfile ==="
+                    cat Dockerfile
+
+                    echo "=== Build Docker Image ==="
                     docker build \
                         --build-arg JAR_FILE=${JAR_NAME} \
                         --build-arg APP_PORT=${APP_PORT} \
                         -t ${IMAGE_NAME} .
+
                     echo "✅ Image Docker créée : ${IMAGE_NAME}"
                     docker images | grep ${APP_NAME}
                 """
@@ -149,13 +163,11 @@ pipeline {
         stage('Deploy with Docker Compose') {
             steps {
                 sh """
-                    export IMAGE_NAME=${IMAGE_NAME}
-                    export APP_PORT=${APP_PORT}
                     docker compose down --remove-orphans || true
                     docker compose up -d
-                    echo "✅ Application déployée"
+                    echo "✅ Application déployée !"
                     sleep 5
-                    docker ps | grep ${APP_NAME}
+                    docker ps
                 """
             }
         }
