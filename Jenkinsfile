@@ -8,6 +8,8 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonarqube'
+        NEXUS_URL = 'http://192.168.1.10:8081'
+
     }
 
     stages {
@@ -41,7 +43,8 @@ pipeline {
 
         stage('Nexus - Publication') {
             steps {
-                sh 'mvn deploy'
+            
+                sh 'mvn deploy -Dnexus.url=$NEXUS_URL'
             }
         }
     }
