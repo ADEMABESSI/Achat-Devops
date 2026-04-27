@@ -4,7 +4,6 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- 🔵 PARENT SPRING -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -15,21 +14,12 @@
     <artifactId>achat</artifactId>
     <version>1.0</version>
 
-    <name>achat</name>
-    <description>Projet DevOps équipe</description>
-
-    <!-- 🔵 PROPERTIES GLOBALES -->
     <properties>
         <java.version>1.8</java.version>
-        <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
-
-        <!-- Sonar (sera overridé par Jenkins si besoin) -->
         <sonar.host.url>http://localhost:9000</sonar.host.url>
     </properties>
 
-    <!-- 🔵 DEPENDENCIES -->
     <dependencies>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -63,12 +53,10 @@
             <artifactId>springfox-boot-starter</artifactId>
             <version>3.0.0</version>
         </dependency>
-
     </dependencies>
 
-    <!-- 🔵 NEXUS DEPLOY (CORRIGÉ POUR ÉQUIPE) -->
+    <!-- 🔥 IMPORTANT PART -->
     <distributionManagement>
-
         <repository>
             <id>nexus-releases</id>
             <url>${nexus.url}/repository/maven-releases/</url>
@@ -78,24 +66,15 @@
             <id>nexus-snapshots</id>
             <url>${nexus.url}/repository/maven-snapshots/</url>
         </snapshotRepository>
-
     </distributionManagement>
 
-    <!-- 🔵 BUILD -->
     <build>
         <plugins>
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-
         </plugins>
     </build>
-         <server>
-  <id>nexus-releases</id>
-  <username>${NEXUS_USER}</username>
-  <password>${NEXUS_PASS}</password>
-</server>
 
 </project>
