@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonarqube'
-       NEXUS_URL = 'http://nexus-server:8081'
+        NEXUS_URL = 'http://nexus-server:8081'
     }
 
     stages {
@@ -43,12 +43,11 @@ pipeline {
                     usernameVariable: 'NEXUS_USER',
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
+
                     sh """
                         mvn clean deploy \
                         -DskipTests \
-                        --settings /var/lib/jenkins/.m2/settings.xml \
-                        -Dnexus.username=$NEXUS_USER \
-                        -Dnexus.password=$NEXUS_PASS
+                        --settings /var/lib/jenkins/.m2/settings.xml
                     """
                 }
             }
