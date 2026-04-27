@@ -1,41 +1,32 @@
-version: "3.8"
-
 services:
-
   mysqldb:
     image: mysql:5.7
-    restart: unless-stopped
+    container_name: mysqldb
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ""
-      MYSQL_DATABASE: achat_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: achat
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10          # ← augmenter les tentatives
+      start_period: 40s    # ← laisser le temps à MySQL de démarrer
 
   app-achat:
-    # ✅ Image locale construite par Jenkins
     image: achat:1.0.0
-    restart: on-failure
-    depends_on:
-      mysqldb:
-        condition: service_healthy
+    container_name: app-achat
+    restart: always
     ports:
       - "8082:8082"
+    depends_on:
+      mysqldb:
+        condition: service_healthy   # ← attendre que MySQL soit healthy
     environment:
-      SPRING_APPLICATION_JSON: >
-        {
-          "spring.datasource.url"         : "jdbc:mysql://mysqldb:3306/achat_db?createDatabaseIfNotExist=true",
-          "spring.datasource.username"    : "root",
-          "spring.datasource.password"    : "",
-          "spring.jpa.hibernate.ddl-auto" : "update",
-          "server.port"                   : "8082"
-        }
-
-volumes:
-  db_data:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/achat?createDat
