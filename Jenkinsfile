@@ -1,63 +1,58 @@
 pipeline {
     agent any
-    
+
+    tools {
+        maven 'Maven'
+        jdk 'JDK'
+    }
+
+    environment {
+        SONARQUBE_ENV = 'SonarQube'
+    }
+
     stages {
-        
-        stage('Checkout GIT') {
+        stage('Checkout') {
             steps {
-                echo 'Récupération du code depuis GitHub...'
+                git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
             }
         }
-        
-        stage('Maven Build') {
+
+        stage('Build') {
             steps {
-                echo 'Compilation Maven...'
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean compile'
             }
         }
-        
-        stage('Maven Test') {
+
+        stage('Test') {
             steps {
-                echo 'Tests unitaires...'
                 sh 'mvn test'
             }
         }
-        
-    }
-    
-    post {
-        success {
-            echo 'Build réussi !'
-        }
-        failure {
-            echo 'Build échoué !'
-        }
-    }
-    stage('SonarQube - Analyse qualité') {
-    steps {
-        withSonarQubeEnv('SonarQube') {
-            sh """
-                mvn sonar:sonar \
-                -Dsonar.projectKey=MonProjet
-            """
-        }
-    }
-}
-    stage('Nexus - Publication') {
+
+        stage('SonarQube - Analyse qualité') {
             steps {
-                echo '========== Publication de l artefact sur Nexus =========='
-                sh 'mvn deploy -DskipTests'
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Nexus - Publication') {
+            steps {
+                sh 'mvn deploy'
             }
         }
     }
 
     post {
+        always {
+            echo 'Pipeline terminé'
+        }
         success {
-            echo '✅ PIPELINE COMPLET RÉUSSI !'
+            echo 'Succès'
         }
         failure {
-            echo '❌ PIPELINE ÉCHOUÉ - vérifier les logs'
+            echo 'Échec'
         }
     }
-    
-
+}
