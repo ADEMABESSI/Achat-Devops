@@ -19,6 +19,11 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
+        stage('Debug POM') {
+    steps {
+        sh 'cat pom.xml'
+    }
+}
 
         stage('Test') {
             steps {
