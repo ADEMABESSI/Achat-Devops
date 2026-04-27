@@ -22,13 +22,13 @@ pipeline {
         NEXUS_JAR_URL = "${NEXUS_URL}/repository/maven-releases/${GROUP_ID_PATH}/${APP_NAME}/${APP_VERSION}/${JAR_NAME}"
     }
 
-    stages {
-
-        stage('Checkout SCM') {
-            steps {
-                git url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
-            }
-        }
+   // ✅ Après (spécifie main)
+stage('Checkout SCM') {
+    steps {
+        git branch: 'main',
+            url: 'https://github.com/ADEMABESSI/Achat-Devops.git'
+    }
+}
 
         stage('Vérifier Dockerfile') {
             steps {
