@@ -5,6 +5,16 @@ pipeline {
         maven 'maven-3.9.4'
         jdk 'java-17'
     }
+    parameters {
+        string(name: 'VM_IP',         defaultValue: '192.168.1.50',  description: 'IP de la VM Jenkins/Docker')
+        string(name: 'NEXUS_IP',      defaultValue: '192.168.1.50',  description: 'IP du serveur Nexus')
+        string(name: 'NEXUS_PORT',    defaultValue: '8081',           description: 'Port de Nexus')
+        string(name: 'APP_NAME',      defaultValue: 'achat',          description: 'Nom de l application')
+        string(name: 'APP_VERSION',   defaultValue: '1.1',            description: 'Version du JAR')
+        string(name: 'GROUP_ID_PATH', defaultValue: 'tn/esprit/rh',   description: 'Chemin groupId dans Nexus')
+        string(name: 'APP_PORT',      defaultValue: '8082',           description: 'Port de l application')
+        string(name: 'IMAGE_TAG',     defaultValue: '1.0.0',          description: 'Tag de l image Docker')
+    }
 
     environment {
         VM_IP         = "172.17.0.1"
