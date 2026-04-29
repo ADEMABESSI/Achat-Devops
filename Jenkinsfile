@@ -5,6 +5,7 @@ pipeline {
         maven 'maven-3.9.4'
         jdk 'java-17'
     }
+
     parameters {
         string(name: 'VM_IP',         defaultValue: '192.168.1.50',  description: 'IP de la VM Jenkins/Docker')
         string(name: 'NEXUS_IP',      defaultValue: '192.168.1.50',  description: 'IP du serveur Nexus')
@@ -17,19 +18,10 @@ pipeline {
     }
 
     environment {
-        VM_IP         = "172.17.0.1"
-        NEXUS_IP      = "172.17.0.1"
-        NEXUS_PORT    = "8081"
-        APP_NAME      = "achat"
-        APP_VERSION   = "1.1"
-        GROUP_ID_PATH = "tn/esprit/rh"
-        APP_PORT      = "8082"
-        IMAGE_TAG     = "1.0.0"
-
-        NEXUS_URL     = "http://${NEXUS_IP}:${NEXUS_PORT}"
-        IMAGE_NAME    = "${APP_NAME}:${IMAGE_TAG}"
-        JAR_NAME      = "${APP_NAME}-${APP_VERSION}.jar"
-        NEXUS_JAR_URL = "${NEXUS_URL}/repository/maven-releases/${GROUP_ID_PATH}/${APP_NAME}/${APP_VERSION}/${JAR_NAME}"
+        NEXUS_URL     = "http://${params.NEXUS_IP}:${params.NEXUS_PORT}"
+        IMAGE_NAME    = "${params.APP_NAME}:${params.IMAGE_TAG}"
+        JAR_NAME      = "${params.APP_NAME}-${params.APP_VERSION}.jar"
+        NEXUS_JAR_URL = "${NEXUS_URL}/repository/maven-releases/${params.GROUP_ID_PATH}/${params.APP_NAME}/${params.APP_VERSION}/${JAR_NAME}"
     }
 
     stages {
@@ -46,10 +38,10 @@ pipeline {
                 sh '''
                     ls -la
                     if [ -f docker/Dockerfile ]; then
-                        echo "✅ Dockerfile trouvé !"
+                        echo "Dockerfile trouvé !"
                         cat docker/Dockerfile
                     else
-                        echo "❌ Dockerfile NON trouvé !"
+                        echo "Dockerfile NON trouvé !"
                         exit 1
                     fi
                 '''
@@ -123,7 +115,7 @@ pipeline {
                     mvn clean deploy -s settings.xml \
                     -DskipTests \
                     -DaltDeploymentRepository=nexus-releases::default::${NEXUS_URL}/repository/maven-releases/ \
-                    || echo "⚠️ JAR déjà dans Nexus - on continue"
+                    || echo "JAR déjà dans Nexus - on continue"
                 """
             }
         }
@@ -140,7 +132,7 @@ pipeline {
                         curl -f -u ${NEXUS_USER}:${NEXUS_PASS} \
                              "${NEXUS_JAR_URL}" \
                              -o target/${JAR_NAME}
-                        echo "✅ JAR récupéré depuis Nexus"
+                        echo "JAR récupéré depuis Nexus"
                         ls -lh target/${JAR_NAME}
                     """
                 }
@@ -160,11 +152,11 @@ pipeline {
                     docker build \
                         -f docker/Dockerfile \
                         --build-arg JAR_FILE=${JAR_NAME} \
-                        --build-arg APP_PORT=${APP_PORT} \
+                        --build-arg APP_PORT=${params.APP_PORT} \
                         -t ${IMAGE_NAME} .
 
-                    echo "✅ Image Docker créée : ${IMAGE_NAME}"
-                    docker images | grep ${APP_NAME}
+                    echo "Image Docker créée : ${IMAGE_NAME}"
+                    docker images | grep ${params.APP_NAME}
                 """
             }
         }
@@ -174,13 +166,12 @@ pipeline {
                 sh """
                     docker compose down --remove-orphans || true
                     docker compose up -d
-                    echo "✅ Application déployée !"
+                    echo "Application déployée !"
                     sleep 5
                     docker ps
                 """
             }
         }
-
     }
 
     post {
@@ -189,17 +180,15 @@ pipeline {
         }
         success {
             echo """
-            ✅ Pipeline réussi !
-            ─────────────────────────────
-            🌐 Application  : http://${VM_IP}:${APP_PORT}
-            📦 Nexus        : http://${NEXUS_IP}:${NEXUS_PORT}
-            🔍 SonarQube    : http://${VM_IP}:9000
-            🐳 Image Docker : ${IMAGE_NAME}
-            ─────────────────────────────
+            Pipeline réussi !
+            Application  : http://${params.VM_IP}:${params.APP_PORT}
+            Nexus        : http://${params.NEXUS_IP}:${params.NEXUS_PORT}
+            SonarQube    : http://${params.VM_IP}:9000
+            Image Docker : ${IMAGE_NAME}
             """
         }
         failure {
-            echo '❌ Pipeline échoué - vérifiez les logs'
+            echo 'Pipeline échoué - vérifiez les logs'
         }
     }
 }
