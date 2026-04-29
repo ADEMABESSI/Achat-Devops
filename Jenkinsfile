@@ -7,8 +7,8 @@ pipeline {
     }
 
     parameters {
-        string(name: 'VM_IP',         defaultValue: '192.168.1.50',  description: 'IP de la VM Jenkins/Docker')
-        string(name: 'NEXUS_IP',      defaultValue: '192.168.1.50',  description: 'IP du serveur Nexus')
+        string(name: 'VM_IP',         defaultValue: '',  description: 'IP de la VM Jenkins/Docker')
+        string(name: 'NEXUS_IP',      defaultValue: '',  description: 'IP du serveur Nexus')
         string(name: 'NEXUS_PORT',    defaultValue: '8081',           description: 'Port de Nexus')
         string(name: 'APP_NAME',      defaultValue: 'achat',          description: 'Nom de l application')
         string(name: 'APP_VERSION',   defaultValue: '1.1',            description: 'Version du JAR')
