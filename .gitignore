@@ -32,3 +32,16 @@ build/
 ### VS Code ###
 .vscode/
 .env
+
+# ===== SECURITE =====
+settings.xml
+*.env
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.jks
+target/dependency-check-report.*
+application-prod.properties
+application-secrets.properties
