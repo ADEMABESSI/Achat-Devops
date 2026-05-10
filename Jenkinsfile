@@ -147,16 +147,17 @@ pipeline {
                     usernameVariable: 'NEXUS_USER',
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
-                    sh '''
-                        mkdir -p target
-                        curl -f --silent --show-error \
-                             -u $NEXUS_USER:$NEXUS_PASS \
-                             "$NEXUS_JAR_URL" \
-                             -o target/$JAR_NAME
-                        echo "JAR recupere depuis Nexus"
-                        ls -lh target/$JAR_NAME
-                    '''
-                }
+                   sh """
+   		 mkdir -p target
+    		NEXUS_HTTP_URL="http://${params.NEXUS_IP}:${params.NEXUS_PORT}"
+    		JAR_URL="\${NEXUS_HTTP_URL}/repository/maven-releases/${params.GROUP_ID_PATH}/${params.APP_NAME}/${params.APP_VERSION}/${params.APP_NAME}-$					{params.APP_VERSION}.jar"
+    		echo "=== URL utilisee : \${JAR_URL} ==="
+  	        curl -f --silent --show-error \\
+        		 -u \${NEXUS_USER}:\${NEXUS_PASS} \\
+       		         "\${JAR_URL}" \\
+                        -o target/${params.APP_NAME}-${params.APP_VERSION}.jar
+    	       ls -lh target/
+	"""
             }
         }
 
