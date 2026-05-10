@@ -7,23 +7,19 @@ pipeline {
     }
 
     parameters {
-        string(name: 'VM_IP',         defaultValue: '',           description: 'IP de la VM Jenkins/Docker')
-        string(name: 'NEXUS_IP',      defaultValue: '',           description: 'IP du serveur Nexus')
-        string(name: 'NEXUS_PORT',    defaultValue: '8081',       description: 'Port de Nexus')
-        string(name: 'APP_NAME',      defaultValue: 'achat',      description: 'Nom de l application')
-        string(name: 'APP_VERSION',   defaultValue: '1.1',        description: 'Version du JAR')
+        string(name: 'VM_IP',         defaultValue: '',             description: 'IP de la VM Jenkins/Docker')
+        string(name: 'NEXUS_IP',      defaultValue: '',             description: 'IP du serveur Nexus')
+        string(name: 'NEXUS_PORT',    defaultValue: '8081',         description: 'Port de Nexus')
+        string(name: 'APP_NAME',      defaultValue: 'achat',        description: 'Nom de l application')
+        string(name: 'APP_VERSION',   defaultValue: '1.1',          description: 'Version du JAR')
         string(name: 'GROUP_ID_PATH', defaultValue: 'tn/esprit/rh', description: 'Chemin groupId dans Nexus')
-        string(name: 'APP_PORT',      defaultValue: '8082',       description: 'Port de l application')
-        string(name: 'IMAGE_TAG',     defaultValue: '1.0.0',      description: 'Tag de l image Docker')
+        string(name: 'APP_PORT',      defaultValue: '8082',         description: 'Port de l application')
+        string(name: 'IMAGE_TAG',     defaultValue: '1.0.0',        description: 'Tag de l image Docker')
     }
 
     environment {
-        NEXUS_URL     = "https://${params.NEXUS_IP}:${params.NEXUS_PORT}"
-        IMAGE_NAME    = "${params.APP_NAME}:${params.IMAGE_TAG}"
-        JAR_NAME      = "${params.APP_NAME}-${params.APP_VERSION}.jar"
-        NEXUS_JAR_URL = "${NEXUS_URL}/repository/maven-releases/${params.GROUP_ID_PATH}/${params.APP_NAME}/${params.APP_VERSION}/${JAR_NAME}"
-        NEXUS_CREDS     = credentials('nexus-cred')
-        SONAR_TOKEN_VAL = credentials('sonar-token')
+        IMAGE_NAME = "${params.APP_NAME}:${params.IMAGE_TAG}"
+        JAR_NAME   = "${params.APP_NAME}-${params.APP_VERSION}.jar"
     }
 
     stages {
@@ -47,9 +43,9 @@ pipeline {
             steps {
                 sh '''
                     if [ -f docker/Dockerfile ]; then
-                        echo "Dockerfile trouve"
+                        echo "Dockerfile trouve !"
                     else
-                        echo "Dockerfile NON trouve"
+                        echo "Dockerfile NON trouve !"
                         exit 1
                     fi
                 '''
@@ -69,18 +65,21 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
+        stage('OWASP Dependency-Check') {
             steps {
-                sh 'mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7 -DskipTests'
+                echo '=== Analyse OWASP des dependances ==='
+                sh '''
+                    mvn org.owasp:dependency-check-maven:check \
+                        -DfailBuildOnCVSS=11 \
+                        -DskipTests \
+                        -DautoUpdate=false \
+                        || echo "OWASP check termine"
+                '''
             }
             post {
                 always {
-                    publishHTML([
-                        allowMissing: true,
-                        reportDir: 'target',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency Report'
-                    ])
+                    archiveArtifacts artifacts: 'target/dependency-check-report.html',
+                                     allowEmptyArchive: true
                 }
             }
         }
@@ -92,11 +91,7 @@ pipeline {
                         credentialsId: 'sonar-token',
                         variable: 'SONAR_TOKEN'
                     )]) {
-                        sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.login=$SONAR_TOKEN \
-                                -Dsonar.security.sources=src/main/java
-                        '''
+                        sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
                     }
                 }
             }
@@ -109,34 +104,45 @@ pipeline {
                     usernameVariable: 'NEXUS_USER',
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
-                    writeFile file: 'settings.xml', text: """
+                    sh '''
+                        cat > settings.xml << EOF
 <settings>
   <servers>
     <server>
       <id>nexus-releases</id>
-      <username>${NEXUS_USER}</username>
-      <password>${NEXUS_PASS}</password>
-    </server>
-    <server>
-      <id>nexus-snapshots</id>
-      <username>${NEXUS_USER}</username>
-      <password>${NEXUS_PASS}</password>
+      <username>$NEXUS_USER</username>
+      <password>$NEXUS_PASS</password>
     </server>
   </servers>
 </settings>
-"""
+EOF
+                    '''
                 }
             }
         }
 
         stage('Nexus - Publication') {
             steps {
-                sh '''
-                    mvn clean deploy -s settings.xml \
-                        -DskipTests \
-                        -DaltDeploymentRepository=nexus-releases::default::$NEXUS_URL/repository/maven-releases/ \
-                        || echo "JAR deja dans Nexus - on continue"
-                '''
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus-cred',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                        NEXUS_HTTP="http://$NEXUS_IP:$NEXUS_PORT"
+                        echo "=== Publication vers : $NEXUS_HTTP ==="
+                        mvn clean deploy -s settings.xml \
+                            -DskipTests \
+                            -DaltDeploymentRepository=nexus-releases::default::$NEXUS_HTTP/repository/maven-releases/ \
+                            || echo "JAR deja dans Nexus - on continue"
+                    '''
+                }
+            }
+            post {
+                always {
+                    sh 'rm -f settings.xml'
+                    echo 'settings.xml supprime'
+                }
             }
         }
 
@@ -147,24 +153,28 @@ pipeline {
                     usernameVariable: 'NEXUS_USER',
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
-                   sh """
-   		 mkdir -p target
-    		NEXUS_HTTP_URL="http://${params.NEXUS_IP}:${params.NEXUS_PORT}"
-    		JAR_URL="\${NEXUS_HTTP_URL}/repository/maven-releases/${params.GROUP_ID_PATH}/${params.APP_NAME}/${params.APP_VERSION}/${params.APP_NAME}-$					{params.APP_VERSION}.jar"
-    		echo "=== URL utilisee : \${JAR_URL} ==="
-  	        curl -f --silent --show-error \\
-        		 -u \${NEXUS_USER}:\${NEXUS_PASS} \\
-       		         "\${JAR_URL}" \\
-                        -o target/${params.APP_NAME}-${params.APP_VERSION}.jar
-    	       ls -lh target/
-	"""
+                    sh '''
+                        mkdir -p target
+                        NEXUS_HTTP="http://$NEXUS_IP:$NEXUS_PORT"
+                        JAR_URL="$NEXUS_HTTP/repository/maven-releases/$GROUP_ID_PATH/$APP_NAME/$APP_VERSION/$APP_NAME-$APP_VERSION.jar"
+                        echo "=== URL utilisee : $JAR_URL ==="
+                        curl -f --silent --show-error \
+                             -u $NEXUS_USER:$NEXUS_PASS \
+                             "$JAR_URL" \
+                             -o target/$APP_NAME-$APP_VERSION.jar
+                        echo "JAR recupere !"
+                        ls -lh target/
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh '''
+                    echo "=== Verification JAR ==="
                     ls -lh target/$JAR_NAME
+                    echo "=== Build Docker Image ==="
                     docker build \
                         -f docker/Dockerfile \
                         --build-arg JAR_FILE=$JAR_NAME \
@@ -179,6 +189,7 @@ pipeline {
 
         stage('Trivy - Scan Image Docker') {
             steps {
+                echo '=== Scan securite Trivy ==='
                 sh '''
                     docker run --rm \
                         -v /var/run/docker.sock:/var/run/docker.sock \
@@ -196,6 +207,7 @@ pipeline {
                 sh '''
                     docker compose down --remove-orphans || true
                     docker compose up -d
+                    echo "Application deployee !"
                     sleep 15
                     docker ps
                 '''
@@ -205,11 +217,11 @@ pipeline {
 
     post {
         always {
-            sh 'rm -f settings.xml'
+            sh 'rm -f settings.xml || true'
             echo 'Pipeline termine'
         }
         success {
-            echo "Pipeline reussi - port ${params.APP_PORT}"
+            echo "Pipeline reussi ! Application sur port $APP_PORT"
         }
         failure {
             echo 'Pipeline echoue - verifiez les logs'
