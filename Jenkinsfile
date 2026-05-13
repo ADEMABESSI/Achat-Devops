@@ -65,25 +65,34 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency-Check') {
-            steps {
-                echo '=== Analyse OWASP des dependances ==='
-                sh '''
-                    mvn org.owasp:dependency-check-maven:check \
-                        -DfailBuildOnCVSS=11 \
-                        -DskipTests \
-                        -DautoUpdate=false \
-                        || echo "OWASP check termine"
-                '''
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'target/dependency-check-report.html',
-                                     allowEmptyArchive: true
-                }
-            }
+        stage('OWASP Dependency Check') {
+    steps {
+        withCredentials([string(
+            credentialsId: 'nvd-api-key',  // ← mets l'ID exact ici
+            variable: 'NVD_API_KEY'
+        )]) {
+            sh """
+                mvn org.owasp:dependency-check-maven:check \
+                    -DnvdApiKey=\${NVD_API_KEY} \
+                    -DfailBuildOnCVSS=11 \
+                    -Dformat=HTML \
+                    || echo "⚠️ Vulnérabilités détectées - on continue"
+            """
         }
-
+    }
+    post {
+        always {
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'target',
+                reportFiles: 'dependency-check-report.html',
+                reportName: 'OWASP Dependency Check Report'
+            ])
+        }
+    }
+}
         stage('SonarQube - Analyse qualite') {
             steps {
                 withSonarQubeEnv('sonarqube') {
