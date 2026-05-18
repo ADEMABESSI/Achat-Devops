@@ -206,6 +206,8 @@ EOF
                         --exit-code 0 \
                         --severity HIGH,CRITICAL \
                         --format table \
+                        --timeout 15m \
+
                         $IMAGE_NAME
                 '''
             }
