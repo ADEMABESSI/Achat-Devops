@@ -196,21 +196,19 @@ EOF
             }
         }
 
-        stage('Trivy - Scan Image Docker') {
-            steps {
-                echo '=== Scan securite Trivy ==='
-                sh '''
-                    docker run --rm \
-                        -v /var/run/docker.sock:/var/run/docker.sock \
-                        aquasec/trivy:latest image \
-                        --exit-code 0 \
-                        --severity HIGH,CRITICAL \
-                        --format table \
-                        --timeout 15m \
-                        $IMAGE_NAME
-                '''
-            }
-        }
+        stage('Trivy - Scan Image') {
+    steps {
+        sh '''
+            trivy image \
+              --timeout 30m \
+              --skip-java-db-update \
+              --skip-version-check \
+              --severity HIGH,CRITICAL \
+              --exit-code 1 \
+              achat:1.0.0
+        '''
+    }
+}
 
         stage('Deploy with Docker Compose') {
             steps {
