@@ -196,17 +196,11 @@ EOF
             }
         }
 
-       stage('Trivy - Scan Image') {
+     stage('Trivy - Scan Image') {
     steps {
         sh '''
-            # Installer Trivy si absent
-            if ! command -v trivy &> /dev/null; then
-                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-            fi
-
             trivy image \
               --timeout 30m \
-              --skip-java-db-update \
               --skip-version-check \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
