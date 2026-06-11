@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ================= PARENT ================= -->
+   <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.7.18</version>
+    <relativePath/>
+   </parent>
+
+    <!-- ================= PROJECT INFO ================= -->
+    <groupId>tn.esprit.rh</groupId>
+    <artifactId>achat</artifactId>
+    <version>1.1</version>
+    <name>achat</name>
+    <description>Projet DevOps</description>
+
+    <!-- ================= PROPERTIES ================= -->
+    <properties>
+        <java.version>1.8</java.version>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+    </properties>
+
+    <!-- ================= DEPENDENCIES ================= -->
+    <dependencies>
+
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- MySQL -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Lombok (FIX stable) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Swagger -->
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-boot-starter</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+             <!-- Actuator + Micrometer pour Prometheus -->
+             <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+
+    </dependencies>
+
+    <!-- ================= NEXUS DEPLOY ================= -->
+    <distributionManagement>
+    <repository>
+        <id>nexus-releases</id>
+        <url>${nexus.url}/repository/maven-releases/</url>
+    </repository>
+
+    <snapshotRepository>
+        <id>nexus-snapshots</id>
+        <url>${nexus.url}/repository/maven-snapshots/</url>
+    </snapshotRepository>
+</distributionManagement>
+
+    <!-- ================= BUILD ================= -->
+    <build>
+
+        <plugins>
+
+    <!-- ===== OWASP Dependency Check ===== -->
+    <plugin>
+    <groupId>org.owasp</groupId>
+    <artifactId>dependency-check-maven</artifactId>
+    <version>9.0.9</version>
+    <configuration>
+        <!-- Bloquer le build si CVSS >= 7 (vulnérabilité haute/critique) -->
+        <failBuildOnCVSS>7</failBuildOnCVSS>
+        <!-- Format du rapport -->
+        <formats>
+            <format>HTML</format>
+            <format>JSON</format>
+        </formats>
+        <outputDirectory>${project.build.directory}</outputDirectory>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>check</goal>
+            </goals>
+        </execution>
+    </executions>
+    </plugin>
+            <!-- Spring Boot -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Compiler FIX (IMPORTANT pour ton erreur javac/lombok) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+</project>
