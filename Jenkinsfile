@@ -59,23 +59,22 @@ pipeline {
             }
         }
 
-        // ✅ STAGE TESTS UNITAIRES + JACOCO COVERAGE
         stage('Tests Unitaires') {
             steps {
                 sh 'mvn test'
             }
             post {
                 always {
-                    // Afficher les résultats des tests
                     junit allowEmptyResults: true,
                           testResults: 'target/surefire-reports/*.xml'
-                    // Rapport JaCoCo coverage
-                    jacoco(
-                        execPattern: 'target/jacoco.exec',
-                        classPattern: 'target/classes',
-                        sourcePattern: 'src/main/java',
-                        reportPath: 'target/site/jacoco'
-                    )
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target/site/jacoco',
+                        reportFiles: 'index.html',
+                        reportName: 'JaCoCo Coverage Report'
+                    ])
                 }
                 failure {
                     echo '⚠️ Des tests ont échoué - vérifiez les logs'
@@ -119,7 +118,6 @@ pipeline {
                         credentialsId: 'sonar-token',
                         variable: 'SONAR_TOKEN'
                     )]) {
-                        // ✅ On envoie aussi le coverage JaCoCo à SonarQube
                         sh '''
                             mvn sonar:sonar \
                                 -Dsonar.login=$SONAR_TOKEN \
