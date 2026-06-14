@@ -12,3 +12,9 @@ ENV SERVER_PORT=${APP_PORT}
 EXPOSE ${APP_PORT}
 ADD target/${JAR_FILE} app.jar
 ENTRYPOINT ["java", "-jar", "/app.jar"]
+# Créer un utilisateur non-root
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Changer les permissions
+COPY --chown=appuser:appgroup app.jar /app/app.jar
+# Utiliser l'utilisateur non-root
+USER appuser
