@@ -59,40 +59,59 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        // ✅ STAGE TESTS UNITAIRES + JACOCO COVERAGE
+        stage('Tests Unitaires') {
             steps {
                 sh 'mvn test'
+            }
+            post {
+                always {
+                    // Afficher les résultats des tests
+                    junit allowEmptyResults: true,
+                          testResults: 'target/surefire-reports/*.xml'
+                    // Rapport JaCoCo coverage
+                    jacoco(
+                        execPattern: 'target/jacoco.exec',
+                        classPattern: 'target/classes',
+                        sourcePattern: 'src/main/java',
+                        reportPath: 'target/site/jacoco'
+                    )
+                }
+                failure {
+                    echo '⚠️ Des tests ont échoué - vérifiez les logs'
+                }
             }
         }
 
         stage('OWASP Dependency Check') {
-    steps {
-        withCredentials([string(
-            credentialsId: 'nvd-api-key',  // ← mets l'ID exact ici
-            variable: 'NVD_API_KEY'
-        )]) {
-            sh """
-                mvn org.owasp:dependency-check-maven:check \
-                    -DnvdApiKey=\${NVD_API_KEY} \
-                    -DfailBuildOnCVSS=11 \
-                    -Dformat=HTML \
-                    || echo "⚠️ Vulnérabilités détectées - on continue"
-            """
+            steps {
+                withCredentials([string(
+                    credentialsId: 'nvd-api-key',
+                    variable: 'NVD_API_KEY'
+                )]) {
+                    sh """
+                        mvn org.owasp:dependency-check-maven:check \
+                            -DnvdApiKey=\${NVD_API_KEY} \
+                            -DfailBuildOnCVSS=11 \
+                            -Dformat=HTML \
+                            || echo "⚠️ Vulnérabilités détectées - on continue"
+                    """
+                }
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target',
+                        reportFiles: 'dependency-check-report.html',
+                        reportName: 'OWASP Dependency Check Report'
+                    ])
+                }
+            }
         }
-    }
-    post {
-        always {
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'target',
-                reportFiles: 'dependency-check-report.html',
-                reportName: 'OWASP Dependency Check Report'
-            ])
-        }
-    }
-}
+
         stage('SonarQube - Analyse qualite') {
             steps {
                 withSonarQubeEnv('sonarqube') {
@@ -100,7 +119,12 @@ pipeline {
                         credentialsId: 'sonar-token',
                         variable: 'SONAR_TOKEN'
                     )]) {
-                        sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
+                        // ✅ On envoie aussi le coverage JaCoCo à SonarQube
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.login=$SONAR_TOKEN \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        '''
                     }
                 }
             }
@@ -196,18 +220,19 @@ EOF
             }
         }
 
-    stage('Trivy - Scan Image') {
-    steps {
-        sh '''
-            trivy image \
-              --timeout 30m \
-              --skip-version-check \
-              --severity HIGH,CRITICAL \
-              --exit-code 0 \
-              achat:1.0.0
-        '''
-    }
-}
+        stage('Trivy - Scan Image') {
+            steps {
+                sh '''
+                    trivy image \
+                      --timeout 30m \
+                      --skip-version-check \
+                      --severity HIGH,CRITICAL \
+                      --exit-code 0 \
+                      achat:1.0.0
+                '''
+            }
+        }
+
         stage('Deploy with Docker Compose') {
             steps {
                 sh '''
