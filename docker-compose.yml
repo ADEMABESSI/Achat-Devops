@@ -1,8 +1,5 @@
-
 version: "3.8"
-
 services:
-
   mysqldb:
     image: mysql:5.7
     container_name: mysqldb
@@ -30,7 +27,6 @@ services:
     container_name: app-achat
     restart: always
     ports:
-      # ✅ CORRIGÉ : hôte:conteneur — les deux doivent être le même port
       - "8082:8082"
     depends_on:
       mysqldb:
@@ -39,10 +35,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/achat?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
-      # ✅ Forcer le port Spring Boot dans le conteneur
       SERVER_PORT: 8082
       SERVER_SERVLET_CONTEXT_PATH: /SpringMVC
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "*"
+    # ✅ FIX : security_opt et read_only INSIDE app-achat service
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     networks:
       - app-network
       - monitoring-network
@@ -92,6 +93,3 @@ volumes:
 networks:
   app-network:
   monitoring-network:
-security_opt:
-  - no-new-privileges:true
-  read_only: true
