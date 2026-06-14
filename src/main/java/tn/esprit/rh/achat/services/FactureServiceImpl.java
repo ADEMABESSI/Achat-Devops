@@ -1,116 +1,60 @@
 package tn.esprit.rh.achat.services;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import tn.esprit.rh.achat.entities.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import tn.esprit.rh.achat.entities.Facture;
 import tn.esprit.rh.achat.repositories.*;
 
-import javax.transaction.Transactional;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
-@Service
-@Slf4j
-@Transactional
-public class FactureServiceImpl implements IFactureService {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-	@Autowired
-	FactureRepository factureRepository;
-	@Autowired
-	OperateurRepository operateurRepository;
-	@Autowired
-	DetailFactureRepository detailFactureRepository;
-	@Autowired
-	FournisseurRepository fournisseurRepository;
-	@Autowired
-	ProduitRepository produitRepository;
-    @Autowired
-    ReglementServiceImpl reglementService;
-	
-	@Override
-	public List<Facture> retrieveAllFactures() {
-		List<Facture> factures = (List<Facture>) factureRepository.findAll();
-		for (Facture facture : factures) {
-			log.info(" facture : " + facture);
-		}
-		return factures;
-	}
+@ExtendWith(MockitoExtension.class)
+class FactureServiceImplTest {
 
-	
-	public Facture addFacture(Facture f) {
-		return factureRepository.save(f);
-	}
+    @Mock private FactureRepository factureRepository;
+    @Mock private OperateurRepository operateurRepository;
+    @Mock private DetailFactureRepository detailFactureRepository;
+    @Mock private FournisseurRepository fournisseurRepository;
+    @Mock private ProduitRepository produitRepository;
+    @Mock private ReglementServiceImpl reglementService;
 
-	/*
-	 * calculer les montants remise et le montant total d'un détail facture
-	 * ainsi que les montants d'une facture
-	 */
-	private Facture addDetailsFacture(Facture f, Set<DetailFacture> detailsFacture) {
-		float montantFacture = 0;
-		float montantRemise = 0;
-		for (DetailFacture detail : detailsFacture) {
-			//Récuperer le produit 
-			Produit produit = produitRepository.findById(detail.getProduit().getIdProduit()).get();
-			//Calculer le montant total pour chaque détail Facture
-			float prixTotalDetail = detail.getQteCommandee() * produit.getPrix();
-			//Calculer le montant remise pour chaque détail Facture
-			float montantRemiseDetail = (prixTotalDetail * detail.getPourcentageRemise()) / 100;
-			float prixTotalDetailRemise = prixTotalDetail - montantRemiseDetail;
-			detail.setMontantRemise(montantRemiseDetail);
-			detail.setPrixTotalDetail(prixTotalDetailRemise);
-			//Calculer le montant total pour la facture
-			montantFacture = montantFacture + prixTotalDetailRemise;
-			//Calculer le montant remise pour la facture
-			montantRemise = montantRemise + montantRemiseDetail;
-			detailFactureRepository.save(detail);
-		}
-		f.setMontantFacture(montantFacture);
-		f.setMontantRemise(montantRemise);
-		return f;
-	}
+    @InjectMocks
+    private FactureServiceImpl factureService;
 
-	@Override
-	public void cancelFacture(Long factureId) {
-		// Méthode 01
-		//Facture facture = factureRepository.findById(factureId).get();
-		Facture facture = factureRepository.findById(factureId).orElse(new Facture());
-		facture.setArchivee(true);
-		factureRepository.save(facture);
-		//Méthode 02 (Avec JPQL)
-		factureRepository.updateFacture(factureId);
-	}
+    @Test
+    void retrieveAllFactures_returnsList() {
+        Facture f1 = new Facture();
+        Facture f2 = new Facture();
+        when(factureRepository.findAll()).thenReturn(Arrays.asList(f1, f2));
+        List<Facture> result = factureService.retrieveAllFactures();
+        assertEquals(2, result.size());
+    }
 
-	@Override
-	public Facture retrieveFacture(Long factureId) {
+    @Test
+    void addFacture_savesAndReturns() {
+        Facture f = new Facture();
+        when(factureRepository.save(f)).thenReturn(f);
+        Facture result = factureService.addFacture(f);
+        assertSame(f, result);
+        verify(factureRepository).save(f);
+    }
 
-		Facture facture = factureRepository.findById(factureId).orElse(null);
-		log.info("facture :" + facture);
-		return facture;
-	}
-
-	@Override
-	public List<Facture> getFacturesByFournisseur(Long idFournisseur) {
-		Fournisseur fournisseur = fournisseurRepository.findById(idFournisseur).orElse(null);
-		return (List<Facture>) fournisseur.getFactures();
-	}
-
-	@Override
-	public void assignOperateurToFacture(Long idOperateur, Long idFacture) {
-		Facture facture = factureRepository.findById(idFacture).orElse(null);
-		Operateur operateur = operateurRepository.findById(idOperateur).orElse(null);
-		operateur.getFactures().add(facture);
-		operateurRepository.save(operateur);
-	}
-
-	@Override
-	public float pourcentageRecouvrement(Date startDate, Date endDate) {
-		float totalFacturesEntreDeuxDates = factureRepository.getTotalFacturesEntreDeuxDates(startDate,endDate);
-		float totalRecouvrementEntreDeuxDates =reglementService.getChiffreAffaireEntreDeuxDate(startDate,endDate);
-		float pourcentage=(totalRecouvrementEntreDeuxDates/totalFacturesEntreDeuxDates)*100;
-		return pourcentage;
-	}
-	
-
+    @Test
+    void cancelFacture_marksArchiveeTrueAndUpdates() {
+        Long id = 1L;
+        Facture f = new Facture();
+        f.setArchivee(false);
+        when(factureRepository.findById(id)).thenReturn(Optional.of(f));
+        factureService.cancelFacture(id);
+        assertTrue(f.getArchivee());
+        verify(factureRepository).save(f);
+        verify(factureRepository).updateFacture(id);
+    }
 }
