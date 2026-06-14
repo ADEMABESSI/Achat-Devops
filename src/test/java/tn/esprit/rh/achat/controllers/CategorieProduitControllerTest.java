@@ -34,23 +34,21 @@ class CategorieProduitControllerTest {
     void getCategories_whenServiceReturnsList_returnsArray() throws Exception {
         CategorieProduit c1 = new CategorieProduit();
         CategorieProduit c2 = new CategorieProduit();
-        when(categorieProduitService.retrieveAllCategorieProduits()).thenReturn(Arrays.asList(c1, c2));
+when(categorieProduitService.retrieveAllCategorieProduits()).thenReturn(Arrays.asList(c1, c2));
 
-        // ✅ FIX : URL corrigée
         mockMvc.perform(get("/categorieProduit/retrieve-all-categorieProduit"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0]").exists());
 
-        verify(categorieProduitService).retrieveAllCategorieProduits();
+verify(categorieProduitService).retrieveAllCategorieProduits();
     }
 
     @Test
     void getCategories_whenServiceReturnsEmpty_returnsEmptyArray() throws Exception {
-        when(categorieProduitService.retrieveAllCategorieProduits()).thenReturn(Collections.emptyList());
+when(categorieProduitService.retrieveAllCategorieProduits()).thenReturn(Collections.emptyList());
 
-        // ✅ FIX : URL corrigée
         mockMvc.perform(get("/categorieProduit/retrieve-all-categorieProduit"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -96,7 +94,7 @@ class CategorieProduitControllerTest {
     @Test
     void modifyCategorie_whenCalled_returnsCategorie() throws Exception {
         CategorieProduit input = new CategorieProduit();
-        when(categorieProduitService.updateCategorieProduit(any(CategorieProduit.class))).thenReturn(input);
+when(categorieProduitService.updateCategorieProduit(any(CategorieProduit.class))).thenReturn(input);
 
         mockMvc.perform(put("/categorieProduit/modify-categorieProduit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,3 +105,4 @@ class CategorieProduitControllerTest {
         verify(categorieProduitService).updateCategorieProduit(any(CategorieProduit.class));
     }
 }
+

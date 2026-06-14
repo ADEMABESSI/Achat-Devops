@@ -1,5 +1,6 @@
 package tn.esprit.rh.achat.controllers;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +19,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// ✅ FIX : ajout du package complet pour que Spring trouve la configuration
-@WebMvcTest(controllers = tn.esprit.rh.achat.controllers.ReglementRestController.class)
+@WebMvcTest(tn.esprit.rh.achat.controllers.ReglementRestController.class)
 class ReglementRestControllerTest {
 
     @Autowired
@@ -81,10 +81,14 @@ class ReglementRestControllerTest {
         verify(reglementService).addReglement(any(Reglement.class));
     }
 
-    @Test
+@Test
     void removeReglement_whenCalled_returnsNotFound() throws Exception {
-        // Cette route n'existe pas dans ReglementRestController → 404 attendu
+        // Cette route n'existe pas dans ReglementRestController
         mockMvc.perform(delete("/reglement/remove-reglement/3"))
                 .andExpect(status().isNotFound());
     }
+
+    // Cette route n'existe pas dans ReglementRestController
+
 }
+
