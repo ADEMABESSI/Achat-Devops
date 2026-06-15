@@ -1,13 +1,15 @@
 # 🚀 Achat DevOps — Chaîne CI/CD Complète
 
-> Industrialisation, automatisation et sécurisation d'une application Spring Boot via une chaîne CI/CD complète.
+Industrialisation, automatisation et sécurisation d'une application Spring Boot via une chaîne CI/CD complète avec monitoring, alerting et tests automatisés.
 
-![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D24939?logo=jenkins&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Conteneurisation-2496ED?logo=docker&logoColor=white)
-![SonarQube](https://img.shields.io/badge/SonarQube-Qualité-4E9BCD?logo=sonarqube&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-6DB33F?logo=springboot&logoColor=white)
-![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-E6522C?logo=prometheus&logoColor=white)
-![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800?logo=grafana&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-red)
+![Docker](https://img.shields.io/badge/Docker-Containerisation-blue)
+![SonarQube](https://img.shields.io/badge/SonarQube-Qualité-green)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java-brightgreen)
+![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-orange)
+![Grafana](https://img.shields.io/badge/Grafana-Dashboards-yellow)
+![MailHog](https://img.shields.io/badge/MailHog-Alerting-lightgrey)
+![JUnit](https://img.shields.io/badge/JUnit-Tests-blue)
 
 ---
 
@@ -18,8 +20,9 @@
 - [Installation rapide](#installation-rapide)
 - [Services et URLs](#services-et-urls)
 - [Pipeline Jenkins](#pipeline-jenkins)
-- [Docker Compose](#docker-compose)
+- [Tests Unitaires](#tests-unitaires)
 - [Monitoring](#monitoring)
+- [Alerting avec MailHog](#alerting-avec-mailhog)
 - [Sécurité](#sécurité)
 - [Structure du projet](#structure-du-projet)
 
@@ -28,20 +31,24 @@
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    MACHINE UBUNTU (172.17.0.1)               │
-│                                                              │
-│  GitHub ──► Jenkins:8080 ──► SonarQube:9000                 │
-│                    │                                         │
-│                    ├──► Nexus:8081 (artéfacts)               │
-│                    │                                         │
-│                    └──► Docker Compose                       │
-│                              ├── app-achat:8082              │
-│                              ├── mysqldb:3306                │
-│                              ├── prometheus:9090             │
-│                              ├── grafana:3000                │
-│                              └── node-exporter:9100          │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    MACHINE UBUNTU (172.17.0.1)                    │
+│                                                                   │
+│  GitHub ──► Jenkins:8080 ──► SonarQube:9000                      │
+│                    │                                              │
+│                    ├──► Nexus:8081        (artefacts Maven)       │
+│                    ├──► OWASP Check       (CVE dépendances)       │
+│                    ├──► Trivy             (scan image Docker)     │
+│                    ├──► JUnit + JaCoCo   (tests + coverage)      │
+│                    │                                              │
+│                    └──► Docker Compose                            │
+│                              ├── app-achat:8082                   │
+│                              ├── mysqldb:3306                     │
+│                              ├── prometheus:9090                  │
+│                              ├── grafana:3000                     │
+│                              ├── node-exporter:9100               │
+│                              └── mailhog:8025 (alertes email)     │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -62,38 +69,35 @@
 ## ⚡ Installation rapide
 
 ### 1. Cloner le projet
-
 ```bash
 git clone https://github.com/ADEMABESSI/Achat-Devops.git
 cd Achat-Devops
 ```
 
 ### 2. Builder l'application
-
 ```bash
 mvn clean package -DskipTests
 ```
 
-### 3. Lancer tous les services avec Docker Compose
-
+### 3. Lancer tous les services
 ```bash
 docker compose up -d
 ```
 
 ### 4. Vérifier que tout tourne
-
 ```bash
 docker ps
 ```
 
 Résultat attendu :
 ```
-CONTAINER ID   IMAGE                    PORTS
-xxxx           achat:1.0.0              0.0.0.0:8082->8082/tcp
-xxxx           mysql:5.7                0.0.0.0:3306->3306/tcp
-xxxx           prom/prometheus          0.0.0.0:9090->9090/tcp
-xxxx           grafana/grafana          0.0.0.0:3000->3000/tcp
-xxxx           prom/node-exporter       0.0.0.0:9100->9100/tcp
+CONTAINER ID   IMAGE                  PORTS
+xxxx           achat:1.0.0            0.0.0.0:8082->8082/tcp
+xxxx           mysql:5.7              0.0.0.0:3306->3306/tcp
+xxxx           prom/prometheus        0.0.0.0:9090->9090/tcp
+xxxx           grafana/grafana        0.0.0.0:3000->3000/tcp
+xxxx           prom/node-exporter     0.0.0.0:9100->9100/tcp
+xxxx           mailhog/mailhog        0.0.0.0:8025->8025/tcp
 ```
 
 ---
@@ -102,59 +106,57 @@ xxxx           prom/node-exporter       0.0.0.0:9100->9100/tcp
 
 | Service | URL | Credentials |
 |---|---|---|
-| **Application** | http://172.17.0.1:8082 | — |
-| **Jenkins** | http://172.17.0.1:8080 | admin / (configuré) |
-| **SonarQube** | http://172.17.0.1:9000 | admin / admin |
-| **Nexus** | http://172.17.0.1:8081 | admin / admin123 |
-| **Grafana** | http://172.17.0.1:3000 | admin / admin |
-| **Prometheus** | http://172.17.0.1:9090 | — |
-| **Métriques App** | http://172.17.0.1:8082/actuator/prometheus | — |
+| Application | http://172.17.0.1:8082/SpringMVC | — |
+| Jenkins | http://172.17.0.1:8080 | admin / (configuré) |
+| SonarQube | http://172.17.0.1:9000 | admin / admin |
+| Nexus | http://172.17.0.1:8081 | admin / admin123 |
+| Grafana | http://172.17.0.1:3000 | admin / admin |
+| Prometheus | http://172.17.0.1:9090 | — |
+| MailHog | http://172.17.0.1:8025 | — |
+| Métriques App | http://172.17.0.1:8082/actuator/prometheus | — |
 
 ---
 
 ## 🔄 Pipeline Jenkins
 
-Le pipeline contient **12 stages** automatisés :
+Le pipeline contient **14 stages automatisés** :
 
 ```
 Checkout SCM
     ↓
-Vérifier Dockerfile
-    ↓
 Tool Install (Maven + Java)
+    ↓
+Vérifier Dockerfile
     ↓
 Build (mvn clean package)
     ↓
-Test (mvn test - JUnit)
+Tests Unitaires (JUnit + JaCoCo) ──► Rapport coverage
     ↓
-OWASP Dependency Check ──► Rapport CVE
+OWASP Dependency Check ───────────► Rapport CVE dépendances
     ↓
-SonarQube Analyse ──────► Rapport qualité
+SonarQube Analyse ────────────────► Rapport qualité code
     ↓
 Prepare Maven Settings
     ↓
-Nexus Publication ──────► JAR versionné
+Nexus Publication ────────────────► JAR versionné
     ↓
 Get JAR from Nexus
     ↓
 Build Docker Image
     ↓
-Trivy Scan ─────────────► Rapport sécurité image
+Trivy Scan ───────────────────────► Rapport sécurité image
     ↓
 Deploy with Docker Compose
     ↓
-Post Actions (notifications)
+Post Actions
 ```
 
-### Déclencher le pipeline manuellement
-
-```
+### Déclencher le pipeline
+```bash
+# Manuellement
 Jenkins → jenkinsfiles → Build Now
-```
 
-### Configurer le webhook GitHub (déclenchement automatique)
-
-```
+# Automatiquement via webhook GitHub
 GitHub → Settings → Webhooks → Add webhook
 Payload URL : http://172.17.0.1:8080/github-webhook/
 Content type : application/json
@@ -162,44 +164,51 @@ Content type : application/json
 
 ---
 
-## 🐳 Docker Compose
+## 🧪 Tests Unitaires
 
-### Lancer tous les services
+Les tests unitaires couvrent l'ensemble des **Controllers** et **Services** de l'application avec **JUnit 5** et **Mockito**.
 
-```bash
-docker compose up -d
+### Structure des tests
+```
+src/test/java/tn/esprit/rh/achat/
+├── controllers/
+│   ├── CategorieProduitControllerTest.java
+│   ├── FactureRestControllerTest.java
+│   ├── FournisseurRestControllerTest.java
+│   ├── OperateurControllerTest.java
+│   ├── ProduitRestControllerTest.java
+│   ├── ReglementRestControllerTest.java
+│   ├── SecteurActiviteControllerTest.java
+│   └── StockRestControllerTest.java
+└── services/
+    ├── CategorieProduitServiceImplTest.java
+    ├── FactureServiceImplTest.java
+    ├── FournisseurServiceImplTest.java
+    ├── OperateurServiceImplTest.java
+    ├── ProduitServiceImplTest.java
+    ├── ReglementServiceImplTest.java
+    ├── SecteurActiviteServiceImplTest.java
+    └── StockServiceImplTest.java
 ```
 
-### Arrêter tous les services
-
+### Lancer les tests
 ```bash
-docker compose down
+mvn test
 ```
 
-### Voir les logs d'un service
+### Coverage JaCoCo
+Le coverage est calculé automatiquement par JaCoCo et envoyé à SonarQube à chaque build Jenkins.
 
 ```bash
-docker compose logs -f app-achat
-docker compose logs -f mysqldb
+# Rapport coverage local
+mvn test
+open target/site/jacoco/index.html
 ```
 
-### Rebuilder l'image de l'application
-
-```bash
-# Après modification du code
-mvn clean package -DskipTests
-docker build -f docker/Dockerfile --build-arg JAR_FILE=achat-1.1.jar -t achat:1.0.0 .
-docker compose up -d app-achat
+### Résultats
 ```
-
-### Variables d'environnement
-
-| Variable | Valeur par défaut | Description |
-|---|---|---|
-| `MYSQL_ROOT_PASSWORD` | root | Mot de passe MySQL root |
-| `MYSQL_DATABASE` | achat | Nom de la base de données |
-| `APP_PORT` | 8082 | Port de l'application |
-| `SPRING_DATASOURCE_URL` | jdbc:mysql://mysqldb:3306/achat | URL de connexion |
+Tests run: 110, Failures: 0, Errors: 0, Skipped: 0
+```
 
 ---
 
@@ -209,8 +218,7 @@ docker compose up -d app-achat
 
 Accéder à l'interface : http://172.17.0.1:9090
 
-**Requêtes PromQL utiles :**
-
+Requêtes PromQL utiles :
 ```promql
 # Disponibilité des services
 up
@@ -225,13 +233,15 @@ up
 jenkins_builds_last_build_result
 ```
 
-### Grafana — Dashboards importés
+### Grafana — Dashboards
+
+Accéder à l'interface : http://172.17.0.1:3000
 
 | Dashboard | ID | Description |
 |---|---|---|
-| Node Exporter Full | `1860` | Métriques système Linux |
-| Jenkins Performance | `9964` | Performance pipeline CI/CD |
-| Spring Boot Stats | `11378` | Métriques applicatives |
+| Node Exporter Full | 1860 | Métriques système Linux (CPU, RAM, disque) |
+| Jenkins Performance | 9964 | Performance et état du pipeline CI/CD |
+| Spring Boot Stats | 11378 | Métriques applicatives Spring Boot |
 
 **Importer un dashboard :**
 ```
@@ -240,47 +250,103 @@ Grafana → Dashboards → New → Import → entrer l'ID → Load → Import
 
 ---
 
+## 📧 Alerting avec MailHog
+
+MailHog est un serveur SMTP de test qui intercepte les **alertes Grafana** sans envoyer de vrais emails.
+
+### Fonctionnement
+
+```
+Prometheus  →  collecte les métriques
+     ↓
+  Grafana   →  détecte un seuil dépassé (ex: CPU > 80%)
+     ↓
+  Alerte    →  envoie un email SMTP (port 1025)
+     ↓
+  MailHog   →  intercepte et affiche l'email ✅
+     ↓
+Interface web → http://172.17.0.1:8025
+```
+
+### Alertes configurées dans Grafana
+
+| Alerte | Seuil | Sévérité |
+|---|---|---|
+| CPU élevé | > 80% | Critical |
+| RAM élevée | > 85% | Warning |
+| Service indisponible | up == 0 | Critical |
+| Build Jenkins échoué | result != 1 | Warning |
+
+### Configuration SMTP dans Grafana
+```ini
+[smtp]
+enabled = true
+host = mailhog:1025
+from_address = grafana@achat.local
+```
+
+### Accéder aux alertes reçues
+```
+http://172.17.0.1:8025
+```
+
+---
+
 ## 🔐 Sécurité
 
-### Outils de sécurité intégrés
+### Outils DevSecOps intégrés
 
-#### Trivy (Scan image Docker)
+| Outil | Rôle | Intégration |
+|---|---|---|
+| **SonarQube** | Qualité et vulnérabilités du code | Pipeline Jenkins |
+| **OWASP Dependency Check** | CVE dans les dépendances Maven | Pipeline Jenkins |
+| **Trivy** | Vulnérabilités de l'image Docker | Pipeline Jenkins |
+
+### Trivy — Scan image Docker
 ```bash
-# Lancer manuellement
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy image achat:1.0.0
 ```
 
-#### OWASP Dependency Check
+### OWASP Dependency Check
 ```bash
-# Lancer manuellement (avec clé NVD)
 mvn dependency-check:check \
   -DnvdApiKey=VOTRE_CLE \
-  -DnvdApiDelay=6000 \
   -Dformat=HTML
 ```
-
 Obtenir une clé NVD gratuite : https://nvd.nist.gov/developers/request-an-api-key
 
 ### Résumé des vulnérabilités (Trivy)
 
 | Sévérité | Nombre | Principaux composants |
 |---|---|---|
-| 🔴 CRITICAL | 6 | Tomcat 9.0.50, Spring4Shell, spring-web |
-| 🟠 HIGH | 37 | Logback, Jackson, Hibernate, SnakeYaml |
-| 🟡 MEDIUM | 36 | MySQL connector, Tomcat, Spring |
+| 🔴 CRITICAL | 6 | Tomcat 9.0.50, Spring4Shell |
+| 🟠 HIGH | 37 | Logback, Jackson, Hibernate |
+| 🟡 MEDIUM | 36 | MySQL connector, Tomcat |
 | 🟢 LOW | 9 | Tomcat, Spring context |
 
-**Recommandation principale :** Mettre à jour Spring Boot vers 2.7.18+ corrige ~70% des CVE.
+> **Recommandation :** Mettre à jour Spring Boot vers 2.7.18+ corrige ~70% des CVE.
+
+### Durcissement Docker
+
+```yaml
+# Dans docker-compose.yml
+app-achat:
+  security_opt:
+    - no-new-privileges:true   # Empêche l'escalade de privilèges
+  read_only: true              # Filesystem en lecture seule
+  tmpfs:
+    - /tmp                     # Seul /tmp est accessible en écriture
+```
 
 ### Jenkins Credentials configurés
 
 | ID | Type | Usage |
 |---|---|---|
-| `nexus-cred` | Username/Password | Publication Nexus |
-| `sonar-token` | Secret text | Analyse SonarQube |
-| `nvd-api-key` | Secret text | OWASP Dependency Check |
+| nexus-cred | Username/Password | Publication Nexus |
+| sonar-token | Secret text | Analyse SonarQube |
+| nvd-api-key | Secret text | OWASP Dependency Check |
 
 ---
 
@@ -289,20 +355,21 @@ Obtenir une clé NVD gratuite : https://nvd.nist.gov/developers/request-an-api-k
 ```
 Achat-Devops/
 ├── docker/
-│   └── Dockerfile              # Image Docker de l'application
+│   └── Dockerfile                  # Image Docker de l'application
 ├── monitoring/
-│   └── prometheus.yml          # Configuration Prometheus
+│   └── prometheus.yml              # Configuration Prometheus
 ├── src/
 │   ├── main/
-│   │   ├── java/tn/esprit/rh/  # Code source Spring Boot
+│   │   ├── java/tn/esprit/rh/      # Code source Spring Boot
 │   │   └── resources/
 │   │       └── application.properties
 │   └── test/
-│       └── java/               # Tests JUnit
-├── docker-compose.yml          # Orchestration des services
-├── Jenkinsfile                 # Pipeline CI/CD
-├── pom.xml                     # Dépendances Maven
-└── README.md                   # Documentation
+│       ├── controllers/            # Tests Controllers (8 classes)
+│       └── services/               # Tests Services (8 classes)
+├── docker-compose.yml              # Orchestration des services
+├── Jenkinsfile                     # Pipeline CI/CD (14 stages)
+├── pom.xml                         # Dépendances Maven
+└── README.md                       # Documentation
 ```
 
 ---
@@ -310,61 +377,51 @@ Achat-Devops/
 ## 🔧 Dépannage
 
 ### L'application ne démarre pas
-
 ```bash
-# Vérifier les logs
 docker compose logs app-achat
-
-# Vérifier que MySQL est healthy
 docker ps | grep mysql
-
-# Redémarrer les services
 docker compose restart
 ```
 
 ### MySQL unhealthy
-
 ```bash
-# Vérifier l'état
 docker inspect mysqldb | grep Health
-
-# Voir les logs MySQL
 docker compose logs mysqldb
 ```
 
-### Pipeline Jenkins échoue
-
+### Conflit de conteneurs
 ```bash
-# Nettoyer le workspace Jenkins
-# Jenkins → Pipeline → Workspace → Wipe out current workspace
-# Puis relancer le build
+docker rm -f node-exporter prometheus grafana mysqldb app-achat mailhog || true
+docker compose up -d
+```
+
+### Pipeline Jenkins échoue
+```
+Jenkins → Pipeline → Workspace → Wipe out current workspace → Relancer
 ```
 
 ### SonarQube inaccessible
-
 ```bash
-# Vérifier que SonarQube tourne
-docker ps | grep sonar
-
 # L'URL dans Jenkins doit être :
-# http://172.17.0.1:9000 (PAS 192.168.x.x)
+http://172.17.0.1:9000  # PAS 192.168.x.x
+```
+
+### MailHog n'affiche pas les alertes
+```bash
+# Vérifier que MailHog tourne
+docker ps | grep mailhog
+# Vérifier la config SMTP Grafana → port 1025
 ```
 
 ---
 
 ## 👥 Équipe
 
-Projet réalisé dans le cadre du module **DevOps** — SESAME Technology
+Projet réalisé dans le cadre du module DevOps — **SESAME Technology**
 
 | Rôle | Responsabilité |
 |---|---|
 | Product Owner | Priorités backlog, validation livrables |
 | Scrum Master | Facilitation, suivi avancement |
-| Développeur DevOps | Pipeline Jenkins, Docker, Monitoring |
-| Développeur Sécurité | OWASP, Trivy, rapport sécurité |
-
----
-
-## 📄 Licence
-
-Ce projet est réalisé dans un cadre pédagogique — SESAME Technology 2026.
+| Développeur DevOps | Pipeline Jenkins, Docker, Monitoring, Alerting |
+| Développeur Sécurité | OWASP, Trivy, SonarQube, rapport sécurité |
